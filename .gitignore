@@ -41,8 +41,9 @@ hs_err_pid*
 # MacOSX
 .DS_Store
 
-# Windows
-Thumbs.db
+# Docker
+.bash_history_docker
+*.log
 
 # Output files
 build
