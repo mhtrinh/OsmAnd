@@ -29,6 +29,7 @@ public class SpeedAlertSettingsFragment extends BaseSettingsFragment implements 
 
 	private static final String COPY_PLUGIN_SETTINGS = "copy_plugin_settings";
 	private static final String RESET_TO_DEFAULT = "reset_to_default";
+	private static final String TEST_ALERT = "test_alert";
 
 	private boolean showSwitchProfile;
 
@@ -125,6 +126,14 @@ public class SpeedAlertSettingsFragment extends BaseSettingsFragment implements 
 		Preference divider = createDividerPref();
 		addOnPreferencesScreen(divider);
 
+		Preference testAlert = new Preference(requireContext());
+		testAlert.setKey(TEST_ALERT);
+		testAlert.setLayoutResource(R.layout.preference_button);
+		testAlert.setTitle(R.string.test_voice_prompts);
+		testAlert.setIcon(getPaintedIcon(R.drawable.ic_action_volume_up, profileColor));
+		testAlert.setPersistent(false);
+		addOnPreferencesScreen(testAlert);
+
 		Preference resetToDefault = new Preference(requireContext());
 		resetToDefault.setKey(RESET_TO_DEFAULT);
 		resetToDefault.setLayoutResource(R.layout.preference_button);
@@ -145,7 +154,12 @@ public class SpeedAlertSettingsFragment extends BaseSettingsFragment implements 
 	@Override
 	public boolean onPreferenceClick(Preference preference) {
 		String key = preference.getKey();
-		if (RESET_TO_DEFAULT.equals(key)) {
+		if (TEST_ALERT.equals(key)) {
+			SpeedAlertPlugin plugin = PluginsHelper.getPlugin(SpeedAlertPlugin.class);
+			if (plugin != null) {
+				plugin.manualTestAlert();
+			}
+		} else if (RESET_TO_DEFAULT.equals(key)) {
 			FragmentManager fragmentManager = getFragmentManager();
 			if (fragmentManager != null) {
 				ResetProfilePrefsBottomSheet.showInstance(fragmentManager, getSelectedAppMode(), this);

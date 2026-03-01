@@ -143,6 +143,12 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 		return SettingsScreenType.SPEED_ALERT_SETTINGS;
 	}
 
+	public void manualTestAlert() {
+		LOG.warn("SPEEDALERT: Manual test alert triggered");
+		loadSound(); // Ensure sound is loaded
+		playAlert();
+	}
+
 	private void loadSound() {
 		if (soundPool == null) {
 			AudioAttributes attr = new AudioAttributes.Builder()
