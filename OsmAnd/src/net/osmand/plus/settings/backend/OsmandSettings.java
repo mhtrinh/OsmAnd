@@ -1636,6 +1636,10 @@ public class OsmandSettings {
 	public final CommonPreference<Boolean> SHOW_TRIP_REC_START_DIALOG = new BooleanPreference(this, "show_trip_recording_start_dialog", true).makeGlobal().makeShared();
 	public final CommonPreference<Boolean> SHOW_BATTERY_OPTIMIZATION_DIALOG = new BooleanPreference(this, "show_battery_optimization_dialog", true).makeGlobal().makeShared();
 	public final CommonPreference<Boolean> SAVE_TRACK_TO_GPX = new BooleanPreference(this, "save_track_to_gpx", false).makeProfile().cache();
+	public final CommonPreference<Boolean> SPEED_ALERT_ENABLED = new BooleanPreference(this, "speed_alert_enabled", false).makeGlobal().cache();
+	public final CommonPreference<Integer> SPEED_ALERT_THRESHOLD_KMH = new IntPreference(this, "speed_alert_threshold_kmh", 5).makeGlobal().cache();
+	public final CommonPreference<Integer> SPEED_ALERT_FALLBACK_KMH = new IntPreference(this, "speed_alert_fallback_kmh", 100).makeGlobal().cache();
+	public final CommonPreference<Integer> SPEED_ALERT_INTERVAL_S = new IntPreference(this, "speed_alert_interval_s", 20).makeGlobal().cache();
 
 	{
 		SAVE_TRACK_TO_GPX.setModeDefaultValue(ApplicationMode.CAR, false);

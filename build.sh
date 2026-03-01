@@ -34,6 +34,9 @@ if [ -n "$APK_PATH" ]; then
     echo "============================================"
     echo "SUCCESS: Build finished!"
     echo "APK location on host: $APK_PATH"
+    # Copy to local directory for convenience
+    cp "$APK_PATH" "$LOCAL_DIR/"
+    echo "APK copied to current directory: $(basename "$APK_PATH")"
     echo "============================================"
 else
     echo "============================================"

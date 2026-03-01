@@ -54,6 +54,7 @@ import net.osmand.plus.plugins.osmedit.OsmEditingPlugin;
 import net.osmand.plus.plugins.parking.ParkingPositionPlugin;
 import net.osmand.plus.plugins.rastermaps.OsmandRasterMapsPlugin;
 import net.osmand.plus.plugins.skimaps.SkiMapsPlugin;
+import net.osmand.plus.plugins.speedalert.SpeedAlertPlugin;
 import net.osmand.plus.plugins.astronomy.AstronomyPlugin;
 import net.osmand.plus.plugins.srtm.SRTMPlugin;
 import net.osmand.plus.plugins.weather.WeatherPlugin;
@@ -111,6 +112,7 @@ public class PluginsHelper {
 		allPlugins.add(new WikipediaPlugin(app));
 		allPlugins.add(new OsmandRasterMapsPlugin(app));
 		allPlugins.add(new OsmandMonitoringPlugin(app));
+		allPlugins.add(new SpeedAlertPlugin(app));
 		checkMarketPlugin(app, new SRTMPlugin(app));
 		allPlugins.add(new WeatherPlugin(app));
 		checkMarketPlugin(app, new NauticalMapsPlugin(app));

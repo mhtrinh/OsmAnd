@@ -46,6 +46,7 @@ public class NavigationService extends Service {
 	// global id don't conflict with others
 	public static int USED_BY_NAVIGATION = 1;
 	public static int USED_BY_GPX = 2;
+	public static int USED_BY_SPEED_ALERT = 4;
 	public static final String USAGE_INTENT = "SERVICE_USED_BY";
 
 	private final NavigationServiceBinder binder = new NavigationServiceBinder();
@@ -140,7 +141,7 @@ public class NavigationService extends Service {
 		locationServiceHelper = app.createLocationServiceHelper();
 		app.setNavigationService(this);
 
-		NotificationType type = isUsedBy(USED_BY_NAVIGATION) ? NAVIGATION : GPX;
+		NotificationType type = isUsedBy(USED_BY_NAVIGATION) ? NAVIGATION : (isUsedBy(USED_BY_GPX) ? GPX : NotificationType.SPEED_ALERT);
 		NotificationHelper notificationHelper = app.getNotificationHelper();
 		Notification notification = notificationHelper.buildTopNotification(this, type);
 
@@ -212,8 +213,11 @@ public class NavigationService extends Service {
 		LOG.info(">>>> NavigationService onTaskRemoved");
 		OsmandApplication app = getApp();
 		app.getNotificationHelper().removeNotifications(false);
-		if (app.getNavigationService() != null && app.getSettings().DISABLE_RECORDING_ONCE_APP_KILLED.get()) {
-			stopSelf();
+		if (app.getNavigationService() != null) {
+			stopIfNeeded(app, USED_BY_SPEED_ALERT);
+			if (app.getSettings().DISABLE_RECORDING_ONCE_APP_KILLED.get()) {
+				stopSelf();
+			}
 		}
 	}
 
