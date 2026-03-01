@@ -1,3 +1,10 @@
+# Fork
+
+This is a fork of OsmAnd with the aim to make a passive over speed alert app
+
+
+------------
+
 OsmAnd (OSM Automated Navigation Directions)
 ------------
 This project aims at providing comfortable map viewing and navigation (routing) application for mobile devices. Particular stress lies with complete offline features (via pre-loaded offline map data) or economic internet usage.
