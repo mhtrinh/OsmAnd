@@ -38,11 +38,7 @@ public class SpeedAlertNotification extends OsmandNotification {
 			public void onReceive(Context context, Intent intent) {
 				SpeedAlertPlugin plugin = PluginsHelper.getActivePlugin(SpeedAlertPlugin.class);
 				if (plugin != null) {
-					plugin.deactivate();
-					NavigationService navigationService = app.getNavigationService();
-					if (navigationService != null) {
-						navigationService.stopIfNeeded(app, USED_BY_SPEED_ALERT);
-					}
+					plugin.stopMonitoring();
 				}
 			}
 		};
@@ -62,7 +58,7 @@ public class SpeedAlertNotification extends OsmandNotification {
 	@Override
 	public boolean isActive() {
 		SpeedAlertPlugin plugin = PluginsHelper.getActivePlugin(SpeedAlertPlugin.class);
-		return plugin != null && plugin.isActive();
+		return plugin != null && plugin.isMonitoring();
 	}
 
 	@Override

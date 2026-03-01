@@ -11,6 +11,9 @@
 	Thx - Hardy
 -->
 
+	<string name="speed_alert_monitoring_start">Start - Speed Alert</string>
+	<string name="speed_alert_monitoring_stop">Stop - Speed Alert</string>
+	<string name="speed_alert_enable_plugin_first">Enable Speed Alert plugin first</string>
 	<string name="share_favorite">Share favorite</string>
 	<string name="copy_list">Copy list</string>
     <string name="shared_string_trip_average">Trip average</string>

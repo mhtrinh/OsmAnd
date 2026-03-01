@@ -31,6 +31,10 @@ import net.osmand.plus.utils.AndroidUtils;
 import org.apache.commons.logging.Log;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+
+import net.osmand.plus.quickaction.QuickActionType;
 
 public class SpeedAlertPlugin extends OsmandPlugin {
 
@@ -41,6 +45,7 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 	public static final String ACTION_STOP = "net.osmand.SpeedAlert.STOP";
 
 	private boolean active;
+	private boolean manuallyStopped = false;
 	private long lastAlertTime;
 	private long lastLogTime;
 	private SoundPool soundPool;
@@ -90,13 +95,9 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 			@Override
 			public void onReceive(Context context, Intent intent) {
 				if (ACTION_START.equals(intent.getAction())) {
-					activate();
-					app.startNavigationService(USED_BY_SPEED_ALERT);
+					startMonitoring();
 				} else if (ACTION_STOP.equals(intent.getAction())) {
-					deactivate();
-					if (app.getNavigationService() != null) {
-						app.getNavigationService().stopIfNeeded(app, USED_BY_SPEED_ALERT);
-					}
+					stopMonitoring();
 				}
 			}
 		};
@@ -108,7 +109,7 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 	@Override
 	public void mapActivityResume(MapActivity activity) {
 		ApplicationMode appMode = activity.getApp().getSettings().getApplicationMode();
-		if (app.getSettings().SPEED_ALERT_ENABLED.getModeValue(appMode) && !active) {
+		if (app.getSettings().SPEED_ALERT_ENABLED.getModeValue(appMode) && !manuallyStopped && !active) {
 			activate();
 			app.startNavigationService(USED_BY_SPEED_ALERT);
 		}
@@ -117,9 +118,34 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 	@Override
 	public void disable(@NonNull OsmandApplication app) {
 		deactivate();
+		manuallyStopped = false;
 		if (app.getNavigationService() != null) {
 			app.getNavigationService().stopIfNeeded(app, USED_BY_SPEED_ALERT);
 		}
+	}
+
+	public void startMonitoring() {
+		manuallyStopped = false;
+		activate();
+		app.startNavigationService(USED_BY_SPEED_ALERT);
+		if (app.getSettings().SPEED_ALERT_VERBOSE_LOG.getModeValue(app.getSettings().getApplicationMode())) {
+			LOG.warn("SPEEDALERT: Monitoring started");
+		}
+	}
+
+	public void stopMonitoring() {
+		manuallyStopped = true;
+		deactivate();
+		if (app.getNavigationService() != null) {
+			app.getNavigationService().stopIfNeeded(app, USED_BY_SPEED_ALERT);
+		}
+		if (app.getSettings().SPEED_ALERT_VERBOSE_LOG.getModeValue(app.getSettings().getApplicationMode())) {
+			LOG.warn("SPEEDALERT: Monitoring stopped");
+		}
+	}
+
+	public boolean isMonitoring() {
+		return active;
 	}
 
 	public void activate() {
@@ -147,6 +173,11 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 		LOG.warn("SPEEDALERT: Manual test alert triggered");
 		loadSound(); // Ensure sound is loaded
 		playAlert();
+	}
+
+	@Override
+	protected List<QuickActionType> getQuickActionTypes() {
+		return Collections.singletonList(net.osmand.plus.quickaction.actions.SpeedAlertToggleAction.TYPE);
 	}
 
 	private void loadSound() {
