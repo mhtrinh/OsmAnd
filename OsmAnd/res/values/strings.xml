@@ -4879,6 +4879,10 @@ Download tile maps directly, or copy them as SQLite database files to OsmAnd\'s 
     <string name="speed_alert_threshold">Speed alert threshold</string>
     <string name="speed_alert_fallback">Fallback speed limit</string>
     <string name="speed_alert_interval">Repeat alert interval</string>
+    <string name="speed_alert_verbose_log">Speed alert verbose log</string>
+    <string name="speed_alert_verbose_log_descr">Log detailed speed calculations and alert triggers to logcat</string>
+    <string name="speed_alert_verbose_log_period">Verbose logging period</string>
+    <string name="speed_alert_verbose_log_period_descr">Frequency of verbose logging in seconds</string>
     <string name="save_track_interval_globally">Logging interval</string>
     <string name="save_track_interval">Logging interval during navigation</string>
     <string name="save_track_interval_descr">Specify the logging interval for track recording during navigation</string>

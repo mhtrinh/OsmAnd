@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Configuration
 CONTAINER_NAME="osmand-env"
 IMAGE_NAME="osmand-build-env"
@@ -9,6 +11,11 @@ LOCAL_DIR="$(pwd)"
 echo "============================================"
 echo "Starting OsmAnd Build Orchestration"
 echo "============================================"
+
+# # 0. Clean up old APKs
+# echo "Step 0: Cleaning up old APKs..."
+# find OsmAnd/build/outputs/apk -name "*.apk" -delete 2>/dev/null || true
+# rm -f OsmAnd-androidFull-legacy-fat-debug.apk
 
 # 1. Build Docker image if needed
 echo "Step 1: Building/checking Docker image..."
@@ -26,7 +33,7 @@ echo "Step 3: Triggering build inside the container..."
 chmod +x build_final.sh
 docker exec "$CONTAINER_NAME" /workspace/build_final.sh
 
-# 5. Check if APK was generated
+# 4. Check if APK was generated
 echo "Step 4: Locating generated APK on host..."
 APK_PATH=$(find OsmAnd/build/outputs/apk -name "*.apk" | head -n 1)
 
@@ -36,7 +43,7 @@ if [ -n "$APK_PATH" ]; then
     echo "APK location on host: $APK_PATH"
     # Copy to local directory for convenience
     cp "$APK_PATH" "$LOCAL_DIR/"
-    echo "APK copied to current directory: $(basename "$APK_PATH")"
+    echo "APK copied to current directory: $LOCAL_DIR/$(basename "$APK_PATH")"
     echo "============================================"
 else
     echo "============================================"

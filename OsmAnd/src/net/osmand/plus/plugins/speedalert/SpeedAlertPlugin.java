@@ -24,6 +24,8 @@ import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.R;
 import net.osmand.plus.activities.MapActivity;
 import net.osmand.plus.plugins.OsmandPlugin;
+import net.osmand.plus.settings.backend.ApplicationMode;
+import net.osmand.plus.settings.fragments.SettingsScreenType;
 import net.osmand.plus.utils.AndroidUtils;
 
 import org.apache.commons.logging.Log;
@@ -40,6 +42,7 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 
 	private boolean active;
 	private long lastAlertTime;
+	private long lastLogTime;
 	private SoundPool soundPool;
 	private int soundId = -1;
 	private boolean soundLoaded;
@@ -52,6 +55,8 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 		pluginPreferences.add(app.getSettings().SPEED_ALERT_THRESHOLD_KMH);
 		pluginPreferences.add(app.getSettings().SPEED_ALERT_FALLBACK_KMH);
 		pluginPreferences.add(app.getSettings().SPEED_ALERT_INTERVAL_S);
+		pluginPreferences.add(app.getSettings().SPEED_ALERT_VERBOSE_LOG);
+		pluginPreferences.add(app.getSettings().SPEED_ALERT_VERBOSE_LOG_PERIOD);
 	}
 
 	@Override
@@ -102,7 +107,8 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 
 	@Override
 	public void mapActivityResume(MapActivity activity) {
-		if (app.getSettings().SPEED_ALERT_ENABLED.get() && !isActive()) {
+		ApplicationMode appMode = activity.getApp().getSettings().getApplicationMode();
+		if (app.getSettings().SPEED_ALERT_ENABLED.getModeValue(appMode) && !active) {
 			activate();
 			app.startNavigationService(USED_BY_SPEED_ALERT);
 		}
@@ -131,9 +137,10 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 		}
 	}
 
+	@Nullable
 	@Override
-	public boolean isActive() {
-		return active;
+	public SettingsScreenType getSettingsScreenType() {
+		return SettingsScreenType.SPEED_ALERT_SETTINGS;
 	}
 
 	private void loadSound() {
@@ -151,7 +158,7 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 				soundId = soundPool.load(afd, 1);
 				afd.close();
 			} catch (IOException e) {
-				LOG.error("Failed to load speed alert sound", e);
+				LOG.error("SPEEDALERT: Failed to load speed alert sound", e);
 			}
 		}
 	}
@@ -171,30 +178,49 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 			return;
 		}
 
+		ApplicationMode appMode = app.getSettings().getApplicationMode();
 		double currentSpeedKmh = location.getSpeed() * 3.6;
 		RouteDataObject routeObject = app.getLocationProvider().getLastKnownRouteSegment();
 		double limitKmh;
+		String limitSource;
 
 		if (routeObject != null) {
 			boolean direction = routeObject.bearingVsRouteDirection(location);
 			float maxSpeed = routeObject.getMaximumSpeed(direction);
 			if (maxSpeed > 0 && maxSpeed != RouteDataObject.NONE_MAX_SPEED) {
 				limitKmh = maxSpeed * 3.6;
+				limitSource = "route";
 			} else {
-				limitKmh = app.getSettings().SPEED_ALERT_FALLBACK_KMH.get();
+				limitKmh = app.getSettings().SPEED_ALERT_FALLBACK_KMH.getModeValue(appMode);
+				limitSource = "fallback";
 			}
 		} else {
-			limitKmh = app.getSettings().SPEED_ALERT_FALLBACK_KMH.get();
+			limitKmh = app.getSettings().SPEED_ALERT_FALLBACK_KMH.getModeValue(appMode);
+			limitSource = "fallback";
 		}
 
-		double thresholdKmh = app.getSettings().SPEED_ALERT_THRESHOLD_KMH.get();
-		if (currentSpeedKmh > limitKmh + thresholdKmh) {
-			long now = System.currentTimeMillis();
-			long intervalMs = app.getSettings().SPEED_ALERT_INTERVAL_S.get() * 1000L;
-			if (now - lastAlertTime >= intervalMs) {
-				playAlert();
-				lastAlertTime = now;
+		double thresholdKmh = app.getSettings().SPEED_ALERT_THRESHOLD_KMH.getModeValue(appMode);
+		long now = System.currentTimeMillis();
+		long intervalMs = app.getSettings().SPEED_ALERT_INTERVAL_S.getModeValue(appMode) * 1000L;
+		long timeSinceLastAlert = lastAlertTime > 0 ? now - lastAlertTime : 0;
+		boolean alertFired = currentSpeedKmh > limitKmh + thresholdKmh && now - lastAlertTime >= intervalMs;
+
+		if (app.getSettings().SPEED_ALERT_VERBOSE_LOG.getModeValue(appMode)) {
+			long logPeriodMs = app.getSettings().SPEED_ALERT_VERBOSE_LOG_PERIOD.getModeValue(appMode) * 1000L;
+			if (alertFired || now - lastLogTime >= logPeriodMs) {
+				LOG.warn("SPEEDALERT: speed=" + String.format("%.1f", currentSpeedKmh)
+						+ " limit=" + String.format("%.1f", limitKmh)
+						+ " (" + limitSource + ")"
+						+ " threshold=" + String.format("%.1f", thresholdKmh)
+						+ " alertFired=" + alertFired
+						+ " timeSinceLast=" + timeSinceLastAlert + " ms");
+				lastLogTime = now;
 			}
+		}
+
+		if (alertFired) {
+			playAlert();
+			lastAlertTime = now;
 		} else if (currentSpeedKmh <= limitKmh) {
 			lastAlertTime = 0;
 		}

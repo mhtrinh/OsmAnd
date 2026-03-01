@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:title="@string/speed_alert_name">
+
+	<SwitchPreferenceCompat
+		android:key="speed_alert_enabled"
+		android:layout="@layout/preference_switch"
+		android:title="@string/speed_alert_enabled" />
+
+	<net.osmand.plus.settings.preferences.ListPreferenceEx
+		android:key="speed_alert_threshold_kmh"
+		android:layout="@layout/preference_with_descr"
+		android:title="@string/speed_alert_threshold" />
+
+	<net.osmand.plus.settings.preferences.ListPreferenceEx
+		android:key="speed_alert_fallback_kmh"
+		android:layout="@layout/preference_with_descr"
+		android:title="@string/speed_alert_fallback" />
+
+	<net.osmand.plus.settings.preferences.ListPreferenceEx
+		android:key="speed_alert_interval_s"
+		android:layout="@layout/preference_with_descr"
+		android:title="@string/speed_alert_interval" />
+
+	<SwitchPreferenceCompat
+		android:key="speed_alert_verbose_log"
+		android:layout="@layout/preference_switch"
+		android:summary="@string/speed_alert_verbose_log_descr"
+		android:title="@string/speed_alert_verbose_log" />
+
+	<net.osmand.plus.settings.preferences.ListPreferenceEx
+		android:key="speed_alert_verbose_log_period"
+		android:layout="@layout/preference_with_descr"
+		android:title="@string/speed_alert_verbose_log_period" />
+
+</PreferenceScreen>
