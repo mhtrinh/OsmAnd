@@ -183,7 +183,7 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 	private void loadSound() {
 		if (soundPool == null) {
 			AudioAttributes attr = new AudioAttributes.Builder()
-					.setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+					.setUsage(AudioAttributes.USAGE_ALARM)
 					.setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
 					.build();
 			soundPool = new SoundPool.Builder().setAudioAttributes(attr).setMaxStreams(1).build();

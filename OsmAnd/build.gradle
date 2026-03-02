@@ -162,7 +162,12 @@ android {
 			signingConfig signingConfigs.development
 		}
 		release {
-			signingConfig signingConfigs.publishing
+			if (new File("/var/lib/jenkins/osmand_key").exists()) {
+				signingConfig signingConfigs.publishing
+			} else {
+				println "WARNING: Publishing key not found. Using development key for Release build."
+				signingConfig signingConfigs.development
+			}
 		}
 	}
 

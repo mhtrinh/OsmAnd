@@ -34,10 +34,11 @@ fi
 ./gradlew :OsmAnd:assemble$VARIANT --no-daemon --stacktrace -x test
 
 # Locating the APK
-echo "Locating the generated APK..."
-# Build tasks place APKs in OsmAnd/build/outputs/apk/
-# The structure usually follows: OsmAnd/build/outputs/apk/<flavor>/<buildType>/
-APK_FILE=$(find OsmAnd/build/outputs/apk -name "*.apk" | head -n 1)
+echo "Locating the generated APK for variant $VARIANT..."
+# Gradle places APKs in OsmAnd/build/outputs/apk/<flavor>/<buildType>/
+# For example: OsmAnd/build/outputs/apk/androidFullLegacyArm64/debug/
+# We find the newest APK in the expected output tree.
+APK_FILE=$(find OsmAnd/build/outputs/apk -name "*.apk" | grep -i "${VARIANT%Debug}\|${VARIANT%Release}" | head -n 1)
 
 if [ -n "$APK_FILE" ]; then
     echo "============================================"
