@@ -684,13 +684,17 @@ public class OsmAndLocationProvider implements SensorEventListener {
 		NavigationSession carNavigationSession = app.getCarNavigationSession();
 		if (carNavigationSession != null && carNavigationSession.hasStarted()) {
 			carNavigationSession.updateLocation(location);
-			this.location = updatedLocation;
-			updateLocation(this.location);
 		}
+		this.location = updatedLocation;
+		updateLocation(this.location);
 	}
 
 	public void setLocationFromSimulation(net.osmand.Location location) {
 		setLocation(location);
+	}
+
+	public RouteDataObject getLastKnownRouteSegment(net.osmand.Location location) {
+		return currentPositionHelper.getLastKnownRouteSegment(location);
 	}
 
 	private void setLocation(@Nullable net.osmand.Location location) {

@@ -9,6 +9,26 @@
 		android:title="@string/speed_alert_enabled" />
 
 	<net.osmand.plus.settings.preferences.ListPreferenceEx
+		android:key="speed_alert_sound_mode"
+		android:layout="@layout/preference_with_descr"
+		android:title="@string/speed_alert_sound_mode" />
+
+	<SwitchPreferenceCompat
+		android:key="speed_alert_toast_enabled"
+		android:layout="@layout/preference_switch"
+		android:title="@string/speed_alert_toast_enabled" />
+
+	<SwitchPreferenceCompat
+		android:key="speed_alert_limit_change_toast_enabled"
+		android:layout="@layout/preference_switch"
+		android:title="@string/speed_alert_limit_change_toast_enabled" />
+
+	<net.osmand.plus.settings.preferences.ListPreferenceEx
+		android:key="speed_alert_vibrate_mode"
+		android:layout="@layout/preference_with_descr"
+		android:title="@string/speed_alert_vibrate_mode" />
+
+	<net.osmand.plus.settings.preferences.ListPreferenceEx
 		android:key="speed_alert_threshold_kmh"
 		android:layout="@layout/preference_with_descr"
 		android:title="@string/speed_alert_threshold" />

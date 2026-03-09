@@ -50,7 +50,8 @@ echo "Step 4: Locating generated APK on host..."
 # For example: androidFullLegacyArm64/debug/
 # VARIANT: androidFullLegacyArm64Debug -> flavor: androidFullLegacyArm64, buildType: debug
 FLAVOR=$(echo "$VARIANT" | sed -E 's/(Debug|Release)$//')
-APK_PATH=$(find OsmAnd/build/outputs/apk -name "*.apk" | grep -i "$FLAVOR" | head -n 1)
+BUILD_TYPE=$(echo "$TYPE" | tr '[:upper:]' '[:lower:]')
+APK_PATH=$(find OsmAnd/build/outputs/apk -name "*.apk" | grep -i "$FLAVOR" | grep -i "$BUILD_TYPE" | head -n 1)
 
 if [ -n "$APK_PATH" ]; then
     echo "============================================"

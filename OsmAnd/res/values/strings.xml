@@ -4875,7 +4875,8 @@ Download tile maps directly, or copy them as SQLite database files to OsmAnd\'s 
     <string name="save_current_track_descr">Save current track as GPX file now.</string>
     <string name="save_current_track">Save current track</string>
     <string name="save_track_to_gpx">Auto-record track during navigation</string>
-    <string name="speed_alert_active">Speed alert active</string>
+    <string name="speed_alert_active">%1$s > %2$s</string>
+    <string name="speed_alert_trigger_test">Trigger test alert</string>
     <string name="speed_alert_descr">Monitoring speed in background</string>
     <string name="speed_alert_name">Speed Alert</string>
     <string name="speed_alert_enabled">Speed alert enabled</string>
@@ -4886,6 +4887,15 @@ Download tile maps directly, or copy them as SQLite database files to OsmAnd\'s 
     <string name="speed_alert_verbose_log_descr">Log detailed speed calculations and alert triggers to logcat</string>
     <string name="speed_alert_verbose_log_period">Verbose logging period</string>
     <string name="speed_alert_verbose_log_period_descr">Frequency of verbose logging in seconds</string>
+    <string name="speed_alert_sound_mode">Sound alert</string>
+    <string name="speed_alert_sound_adaptive">Adaptive</string>
+    <string name="speed_alert_sound_speaker">Speaker</string>
+    <string name="speed_alert_toast_enabled">Show toast alert</string>
+    <string name="speed_alert_limit_change_toast_enabled">Show toast on speed limit change</string>
+    <string name="speed_alert_limit_change">Speed limit: %1$s</string>
+    <string name="speed_alert_vibrate_mode">Vibrate on alert</string>
+    <string name="speed_alert_vibrate_pattern_1">Pattern 1 (single long pulse)</string>
+    <string name="speed_alert_vibrate_pattern_2">Pattern 2 (long-short)</string>
     <string name="save_track_interval_globally">Logging interval</string>
     <string name="save_track_interval">Logging interval during navigation</string>
     <string name="save_track_interval_descr">Specify the logging interval for track recording during navigation</string>

@@ -45,11 +45,27 @@ public class SpeedAlertSettingsFragment extends BaseSettingsFragment implements 
 
 	@Override
 	protected void setupPreferences() {
+		setupSoundModePref();
+		setupVibratePref();
 		setupThresholdPref();
 		setupFallbackPref();
 		setupIntervalPref();
 		setupVerboseLogPeriodPref();
 		setupBottomButtons();
+	}
+
+	private void setupSoundModePref() {
+		SpeedAlertSoundMode[] modes = SpeedAlertSoundMode.values();
+		String[] entries = {
+			getString(R.string.speed_alert_sound_adaptive),
+			getString(R.string.speed_alert_sound_speaker),
+			getString(R.string.shared_string_none)
+		};
+		ListPreferenceEx pref = findPreference(settings.SPEED_ALERT_SOUND_MODE.getId());
+		if (pref != null) {
+			pref.setEntries(entries);
+			pref.setEntryValues(modes);
+		}
 	}
 
 	@Override
@@ -59,6 +75,20 @@ public class SpeedAlertSettingsFragment extends BaseSettingsFragment implements 
 		View switchProfile = view.findViewById(R.id.profile_button);
 		if (switchProfile != null) {
 			AndroidUiHelper.updateVisibility(switchProfile, showSwitchProfile);
+		}
+	}
+
+	private void setupVibratePref() {
+		SpeedAlertVibrateMode[] modes = SpeedAlertVibrateMode.values();
+		String[] entries = {
+			getString(R.string.speed_alert_vibrate_pattern_1),
+			getString(R.string.speed_alert_vibrate_pattern_2),
+			getString(R.string.shared_string_none)
+		};
+		ListPreferenceEx pref = findPreference(settings.SPEED_ALERT_VIBRATE_MODE.getId());
+		if (pref != null) {
+			pref.setEntries(entries);
+			pref.setEntryValues(modes);
 		}
 	}
 
@@ -129,7 +159,7 @@ public class SpeedAlertSettingsFragment extends BaseSettingsFragment implements 
 		Preference testAlert = new Preference(requireContext());
 		testAlert.setKey(TEST_ALERT);
 		testAlert.setLayoutResource(R.layout.preference_button);
-		testAlert.setTitle(R.string.test_voice_prompts);
+		testAlert.setTitle(R.string.speed_alert_trigger_test);
 		testAlert.setIcon(getPaintedIcon(R.drawable.ic_action_volume_up, profileColor));
 		testAlert.setPersistent(false);
 		addOnPreferencesScreen(testAlert);

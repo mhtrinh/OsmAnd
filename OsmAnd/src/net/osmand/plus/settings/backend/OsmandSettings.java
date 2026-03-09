@@ -1642,6 +1642,10 @@ public class OsmandSettings {
 	public final CommonPreference<Integer> SPEED_ALERT_INTERVAL_S = new IntPreference(this, "speed_alert_interval_s", 20).makeProfile().cache();
 	public final CommonPreference<Boolean> SPEED_ALERT_VERBOSE_LOG = new BooleanPreference(this, "speed_alert_verbose_log", false).makeProfile().cache();
 	public final CommonPreference<Integer> SPEED_ALERT_VERBOSE_LOG_PERIOD = new IntPreference(this, "speed_alert_verbose_log_period", 2).makeProfile().cache();
+	public final CommonPreference<net.osmand.plus.plugins.speedalert.SpeedAlertSoundMode> SPEED_ALERT_SOUND_MODE = new EnumStringPreference<>(this, "speed_alert_sound_mode", net.osmand.plus.plugins.speedalert.SpeedAlertSoundMode.ADAPTIVE, net.osmand.plus.plugins.speedalert.SpeedAlertSoundMode.values()).makeProfile().cache();
+	public final CommonPreference<Boolean> SPEED_ALERT_TOAST_ENABLED = new BooleanPreference(this, "speed_alert_toast_enabled", false).makeProfile().cache();
+	public final CommonPreference<Boolean> SPEED_ALERT_LIMIT_CHANGE_TOAST_ENABLED = new BooleanPreference(this, "speed_alert_limit_change_toast_enabled", true).makeProfile().cache();
+	public final CommonPreference<net.osmand.plus.plugins.speedalert.SpeedAlertVibrateMode> SPEED_ALERT_VIBRATE_MODE = new EnumStringPreference<>(this, "speed_alert_vibrate_mode", net.osmand.plus.plugins.speedalert.SpeedAlertVibrateMode.PATTERN_1, net.osmand.plus.plugins.speedalert.SpeedAlertVibrateMode.values()).makeProfile().cache();
 
 	{
 		SAVE_TRACK_TO_GPX.setModeDefaultValue(ApplicationMode.CAR, false);

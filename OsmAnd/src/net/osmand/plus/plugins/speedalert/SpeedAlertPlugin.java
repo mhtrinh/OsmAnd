@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.res.AssetFileDescriptor;
 import android.graphics.drawable.Drawable;
 import android.media.AudioAttributes;
+import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.Build;
 import android.os.VibrationEffect;
@@ -27,6 +28,7 @@ import net.osmand.plus.plugins.OsmandPlugin;
 import net.osmand.plus.settings.backend.ApplicationMode;
 import net.osmand.plus.settings.fragments.SettingsScreenType;
 import net.osmand.plus.utils.AndroidUtils;
+import net.osmand.plus.utils.OsmAndFormatter;
 
 import org.apache.commons.logging.Log;
 
@@ -48,10 +50,14 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 	private boolean manuallyStopped = false;
 	private long lastAlertTime;
 	private long lastLogTime;
-	private SoundPool soundPool;
-	private int soundId = -1;
-	private boolean soundLoaded;
+	private SoundPool soundPoolAlarm;
+	private SoundPool soundPoolNotification;
+	private int soundIdAlarm = -1;
+	private int soundIdNotification = -1;
+	private boolean soundLoadedAlarm;
+	private boolean soundLoadedNotification;
 	private Vibrator vibrator;
+	private double lastLimitKmh = -1;
 
 	public SpeedAlertPlugin(OsmandApplication app) {
 		super(app);
@@ -62,6 +68,10 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 		pluginPreferences.add(app.getSettings().SPEED_ALERT_INTERVAL_S);
 		pluginPreferences.add(app.getSettings().SPEED_ALERT_VERBOSE_LOG);
 		pluginPreferences.add(app.getSettings().SPEED_ALERT_VERBOSE_LOG_PERIOD);
+		pluginPreferences.add(app.getSettings().SPEED_ALERT_SOUND_MODE);
+		pluginPreferences.add(app.getSettings().SPEED_ALERT_TOAST_ENABLED);
+		pluginPreferences.add(app.getSettings().SPEED_ALERT_LIMIT_CHANGE_TOAST_ENABLED);
+		pluginPreferences.add(app.getSettings().SPEED_ALERT_VIBRATE_MODE);
 	}
 
 	@Override
@@ -160,6 +170,7 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 			active = false;
 			releaseSound();
 			lastAlertTime = 0;
+			lastLimitKmh = -1;
 		}
 	}
 
@@ -172,7 +183,7 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 	public void manualTestAlert() {
 		LOG.warn("SPEEDALERT: Manual test alert triggered");
 		loadSound(); // Ensure sound is loaded
-		playAlert();
+		playAlert("--", "--");
 	}
 
 	@Override
@@ -181,32 +192,51 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 	}
 
 	private void loadSound() {
-		if (soundPool == null) {
-			AudioAttributes attr = new AudioAttributes.Builder()
+		if (soundPoolAlarm == null) {
+			AudioAttributes attrAlarm = new AudioAttributes.Builder()
 					.setUsage(AudioAttributes.USAGE_ALARM)
 					.setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
 					.build();
-			soundPool = new SoundPool.Builder().setAudioAttributes(attr).setMaxStreams(1).build();
-			soundPool.setOnLoadCompleteListener((pool, sampleId, status) -> soundLoaded = (status == 0));
+			soundPoolAlarm = new SoundPool.Builder().setAudioAttributes(attrAlarm).setMaxStreams(1).build();
+			soundPoolAlarm.setOnLoadCompleteListener((pool, sampleId, status) -> soundLoadedAlarm = (status == 0));
 		}
-		if (soundId == -1) {
-			try {
+		if (soundPoolNotification == null) {
+			AudioAttributes attrNotification = new AudioAttributes.Builder()
+					.setUsage(AudioAttributes.USAGE_NOTIFICATION)
+					.setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+					.build();
+			soundPoolNotification = new SoundPool.Builder().setAudioAttributes(attrNotification).setMaxStreams(1).build();
+			soundPoolNotification.setOnLoadCompleteListener((pool, sampleId, status) -> soundLoadedNotification = (status == 0));
+		}
+		try {
+			if (soundIdAlarm == -1) {
 				AssetFileDescriptor afd = app.getAssets().openFd("sounds/ding.ogg");
-				soundId = soundPool.load(afd, 1);
+				soundIdAlarm = soundPoolAlarm.load(afd, 1);
 				afd.close();
-			} catch (IOException e) {
-				LOG.error("SPEEDALERT: Failed to load speed alert sound", e);
 			}
+			if (soundIdNotification == -1) {
+				AssetFileDescriptor afd = app.getAssets().openFd("sounds/ding.ogg");
+				soundIdNotification = soundPoolNotification.load(afd, 1);
+				afd.close();
+			}
+		} catch (IOException e) {
+			LOG.error("SPEEDALERT: Failed to load speed alert sound", e);
 		}
 	}
 
 	private void releaseSound() {
-		if (soundPool != null) {
-			soundPool.release();
-			soundPool = null;
-			soundId = -1;
-			soundLoaded = false;
+		if (soundPoolAlarm != null) {
+			soundPoolAlarm.release();
+			soundPoolAlarm = null;
 		}
+		if (soundPoolNotification != null) {
+			soundPoolNotification.release();
+			soundPoolNotification = null;
+		}
+		soundIdAlarm = -1;
+		soundIdNotification = -1;
+		soundLoadedAlarm = false;
+		soundLoadedNotification = false;
 	}
 
 	@Override
@@ -217,7 +247,7 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 
 		ApplicationMode appMode = app.getSettings().getApplicationMode();
 		double currentSpeedKmh = location.getSpeed() * 3.6;
-		RouteDataObject routeObject = app.getLocationProvider().getLastKnownRouteSegment();
+		RouteDataObject routeObject = app.getLocationProvider().getLastKnownRouteSegment(location);
 		double limitKmh;
 		String limitSource;
 
@@ -235,6 +265,14 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 			limitKmh = app.getSettings().SPEED_ALERT_FALLBACK_KMH.getModeValue(appMode);
 			limitSource = "fallback";
 		}
+
+		if (lastLimitKmh != -1 && lastLimitKmh != limitKmh) {
+			if (app.getSettings().SPEED_ALERT_LIMIT_CHANGE_TOAST_ENABLED.getModeValue(appMode)) {
+				String limitFormatted = OsmAndFormatter.getFormattedSpeed((float) (limitKmh / 3.6), app);
+				app.showToastMessage(app.getString(R.string.speed_alert_limit_change, limitFormatted));
+			}
+		}
+		lastLimitKmh = limitKmh;
 
 		double thresholdKmh = app.getSettings().SPEED_ALERT_THRESHOLD_KMH.getModeValue(appMode);
 		long now = System.currentTimeMillis();
@@ -256,19 +294,42 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 		}
 
 		if (alertFired) {
-			playAlert();
+			String currentSpeedFormatted = OsmAndFormatter.getFormattedSpeed((float) (currentSpeedKmh / 3.6), app);
+			String limitFormatted = OsmAndFormatter.getFormattedSpeed((float) (limitKmh / 3.6), app);
+			playAlert(currentSpeedFormatted, limitFormatted);
 			lastAlertTime = now;
 		} else if (currentSpeedKmh <= limitKmh) {
 			lastAlertTime = 0;
 		}
 	}
 
-	private void playAlert() {
-		if (soundPool != null && soundLoaded) {
-			soundPool.play(soundId, 1, 1, 1, 0, 1);
+	private void playAlert(String currentSpeedStr, String limitStr) {
+		ApplicationMode appMode = app.getSettings().getApplicationMode();
+		SpeedAlertSoundMode soundMode = app.getSettings().SPEED_ALERT_SOUND_MODE.getModeValue(appMode);
+		if (soundMode == SpeedAlertSoundMode.ADAPTIVE) {
+			AudioManager audioManager = (AudioManager) app.getSystemService(Context.AUDIO_SERVICE);
+			if (audioManager != null && audioManager.isMusicActive()) {
+				if (soundPoolNotification != null && soundLoadedNotification) {
+					soundPoolNotification.play(soundIdNotification, 1, 1, 1, 0, 1);
+				}
+			} else {
+				if (soundPoolAlarm != null && soundLoadedAlarm) {
+					soundPoolAlarm.play(soundIdAlarm, 1, 1, 1, 0, 1);
+				}
+			}
+		} else if (soundMode == SpeedAlertSoundMode.SPEAKER) {
+			if (soundPoolAlarm != null && soundLoadedAlarm) {
+				soundPoolAlarm.play(soundIdAlarm, 1, 1, 1, 0, 1);
+			}
 		}
-		if (vibrator != null && vibrator.hasVibrator()) {
-			long[] pattern = {0, 100, 100, 100, 100, 100};
+		if (app.getSettings().SPEED_ALERT_TOAST_ENABLED.getModeValue(appMode)) {
+			app.showToastMessage(app.getString(R.string.speed_alert_active, currentSpeedStr, limitStr));
+		}
+		SpeedAlertVibrateMode vibrateMode = app.getSettings().SPEED_ALERT_VIBRATE_MODE.getModeValue(appMode);
+		if (vibrateMode != SpeedAlertVibrateMode.OFF && vibrator != null && vibrator.hasVibrator()) {
+			long[] pattern = vibrateMode == SpeedAlertVibrateMode.PATTERN_1
+					? new long[]{0, 800}
+					: new long[]{0, 600, 100, 200};
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 				vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1));
 			} else {
