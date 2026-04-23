@@ -20,6 +20,7 @@ import net.osmand.plus.activities.MapActivity;
 import net.osmand.plus.plugins.PluginsHelper;
 import net.osmand.plus.plugins.speedalert.SpeedAlertPlugin;
 import net.osmand.plus.utils.AndroidUtils;
+import net.osmand.plus.utils.OsmAndFormatter;
 
 public class SpeedAlertNotification extends OsmandNotification {
 
@@ -83,8 +84,16 @@ public class SpeedAlertNotification extends OsmandNotification {
 		icon = R.drawable.ic_action_speed_limit;
 		ongoing = true;
 
+		String title = app.getString(R.string.speed_alert_active);
+		SpeedAlertPlugin plugin = PluginsHelper.getPlugin(SpeedAlertPlugin.class);
+		if (plugin != null && plugin.isMonitoring()) {
+			String speedStr = OsmAndFormatter.getFormattedSpeed((float) (plugin.getCurrentSpeedKmh() / 3.6), app);
+			String limitStr = OsmAndFormatter.getFormattedSpeed((float) (plugin.getLimitKmh() / 3.6), app);
+			title = app.getString(R.string.speed_alert_active, speedStr, limitStr);
+		}
+
 		Builder notificationBuilder = createBuilder(wearable)
-				.setContentTitle(app.getString(R.string.speed_alert_active))
+				.setContentTitle(title)
 				.setContentText(app.getString(R.string.speed_alert_descr));
 
 		Intent stopIntent = new Intent(OSMAND_STOP_SPEED_ALERT_SERVICE_ACTION);

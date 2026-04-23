@@ -1116,6 +1116,7 @@
 
 		<activity android:name="net.osmand.plus.plugins.development.TestVoiceActivity" />
 		<activity android:name="net.osmand.plus.plugins.development.LogcatActivity" />
+		<activity android:name="net.osmand.plus.plugins.speedalert.SpeedAlertLogActivity" />
 		<activity android:name="net.osmand.plus.download.DownloadActivity" android:exported="true" android:label="" />
 		<activity android:name="net.osmand.plus.wikivoyage.explore.WikivoyageExploreActivity" android:exported="true">
 

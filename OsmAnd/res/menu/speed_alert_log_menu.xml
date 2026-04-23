@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto">
+	<item
+		android:id="@+id/action_share"
+		android:icon="@drawable/ic_action_gshare_dark"
+		android:title="@string/shared_string_export"
+		app:showAsAction="always" />
+	<item
+		android:id="@+id/action_clear"
+		android:icon="@drawable/ic_action_delete_dark"
+		android:title="@string/speed_alert_clear_log"
+		app:showAsAction="ifRoom" />
+</menu>

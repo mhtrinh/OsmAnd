@@ -2,12 +2,14 @@ package net.osmand.plus.plugins.speedalert;
 
 import static net.osmand.plus.plugins.PluginInfoFragment.PLUGIN_INFO;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.FragmentManager;
 import androidx.preference.Preference;
 
@@ -30,6 +32,10 @@ public class SpeedAlertSettingsFragment extends BaseSettingsFragment implements 
 	private static final String COPY_PLUGIN_SETTINGS = "copy_plugin_settings";
 	private static final String RESET_TO_DEFAULT = "reset_to_default";
 	private static final String TEST_ALERT = "test_alert";
+	private static final String START_MONITORING = "start_monitoring";
+	private static final String STOP_MONITORING = "stop_monitoring";
+	private static final String VIEW_LOG = "view_log";
+	private static final String CLEAR_LOG = "clear_log";
 
 	private boolean showSwitchProfile;
 
@@ -156,6 +162,22 @@ public class SpeedAlertSettingsFragment extends BaseSettingsFragment implements 
 		Preference divider = createDividerPref();
 		addOnPreferencesScreen(divider);
 
+		Preference startMonitoring = new Preference(requireContext());
+		startMonitoring.setKey(START_MONITORING);
+		startMonitoring.setLayoutResource(R.layout.preference_button);
+		startMonitoring.setTitle(R.string.speed_alert_start_monitoring);
+		startMonitoring.setIcon(getPaintedIcon(R.drawable.ic_action_play_dark, profileColor));
+		startMonitoring.setPersistent(false);
+		addOnPreferencesScreen(startMonitoring);
+
+		Preference stopMonitoring = new Preference(requireContext());
+		stopMonitoring.setKey(STOP_MONITORING);
+		stopMonitoring.setLayoutResource(R.layout.preference_button);
+		stopMonitoring.setTitle(R.string.speed_alert_stop_monitoring);
+		stopMonitoring.setIcon(getPaintedIcon(R.drawable.ic_action_stop, profileColor));
+		stopMonitoring.setPersistent(false);
+		addOnPreferencesScreen(stopMonitoring);
+
 		Preference testAlert = new Preference(requireContext());
 		testAlert.setKey(TEST_ALERT);
 		testAlert.setLayoutResource(R.layout.preference_button);
@@ -163,6 +185,22 @@ public class SpeedAlertSettingsFragment extends BaseSettingsFragment implements 
 		testAlert.setIcon(getPaintedIcon(R.drawable.ic_action_volume_up, profileColor));
 		testAlert.setPersistent(false);
 		addOnPreferencesScreen(testAlert);
+
+		Preference viewLog = new Preference(requireContext());
+		viewLog.setKey(VIEW_LOG);
+		viewLog.setLayoutResource(R.layout.preference_button);
+		viewLog.setTitle(R.string.speed_alert_view_log);
+		viewLog.setIcon(getPaintedIcon(R.drawable.ic_action_description, profileColor));
+		viewLog.setPersistent(false);
+		addOnPreferencesScreen(viewLog);
+
+		Preference clearLog = new Preference(requireContext());
+		clearLog.setKey(CLEAR_LOG);
+		clearLog.setLayoutResource(R.layout.preference_button);
+		clearLog.setTitle(R.string.speed_alert_clear_log);
+		clearLog.setIcon(getPaintedIcon(R.drawable.ic_action_delete_dark, profileColor));
+		clearLog.setPersistent(false);
+		addOnPreferencesScreen(clearLog);
 
 		Preference resetToDefault = new Preference(requireContext());
 		resetToDefault.setKey(RESET_TO_DEFAULT);
@@ -189,6 +227,29 @@ public class SpeedAlertSettingsFragment extends BaseSettingsFragment implements 
 			if (plugin != null) {
 				plugin.manualTestAlert();
 			}
+		} else if (START_MONITORING.equals(key)) {
+			SpeedAlertPlugin plugin = PluginsHelper.getPlugin(SpeedAlertPlugin.class);
+			if (plugin != null) {
+				plugin.startMonitoring();
+				app.showToastMessage(R.string.speed_alert_enabled);
+			}
+		} else if (STOP_MONITORING.equals(key)) {
+			SpeedAlertPlugin plugin = PluginsHelper.getPlugin(SpeedAlertPlugin.class);
+			if (plugin != null) {
+				plugin.stopMonitoring();
+				app.showToastMessage(R.string.shared_string_off);
+			}
+		} else if (VIEW_LOG.equals(key)) {
+			startActivity(new Intent(requireContext(), SpeedAlertLogActivity.class));
+		} else if (CLEAR_LOG.equals(key)) {
+			new AlertDialog.Builder(requireContext())
+					.setMessage(R.string.speed_alert_clear_log_confirm)
+					.setPositiveButton(R.string.shared_string_yes, (dialog, which) -> {
+						SpeedAlertLogger.clearLog(app);
+						app.showToastMessage(R.string.speed_alert_log_cleared);
+					})
+					.setNegativeButton(R.string.shared_string_no, null)
+					.show();
 		} else if (RESET_TO_DEFAULT.equals(key)) {
 			FragmentManager fragmentManager = getFragmentManager();
 			if (fragmentManager != null) {

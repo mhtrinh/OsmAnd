@@ -24,6 +24,7 @@ import net.osmand.binary.RouteDataObject;
 import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.R;
 import net.osmand.plus.activities.MapActivity;
+import net.osmand.plus.notifications.OsmandNotification;
 import net.osmand.plus.plugins.OsmandPlugin;
 import net.osmand.plus.settings.backend.ApplicationMode;
 import net.osmand.plus.settings.fragments.SettingsScreenType;
@@ -58,6 +59,11 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 	private boolean soundLoadedNotification;
 	private Vibrator vibrator;
 	private double lastLimitKmh = -1;
+	private Location lastProcessedLocation;
+	private double currentSpeedKmh;
+	private double limitKmh;
+	private String limitSource;
+	private boolean wasAlerting;
 
 	public SpeedAlertPlugin(OsmandApplication app) {
 		super(app);
@@ -72,6 +78,14 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 		pluginPreferences.add(app.getSettings().SPEED_ALERT_TOAST_ENABLED);
 		pluginPreferences.add(app.getSettings().SPEED_ALERT_LIMIT_CHANGE_TOAST_ENABLED);
 		pluginPreferences.add(app.getSettings().SPEED_ALERT_VIBRATE_MODE);
+	}
+
+	public double getCurrentSpeedKmh() {
+		return currentSpeedKmh;
+	}
+
+	public double getLimitKmh() {
+		return limitKmh;
 	}
 
 	@Override
@@ -139,7 +153,7 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 		activate();
 		app.startNavigationService(USED_BY_SPEED_ALERT);
 		if (app.getSettings().SPEED_ALERT_VERBOSE_LOG.getModeValue(app.getSettings().getApplicationMode())) {
-			LOG.warn("SPEEDALERT: Monitoring started");
+			SpeedAlertLogger.log(app, "Monitoring started");
 		}
 	}
 
@@ -150,7 +164,7 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 			app.getNavigationService().stopIfNeeded(app, USED_BY_SPEED_ALERT);
 		}
 		if (app.getSettings().SPEED_ALERT_VERBOSE_LOG.getModeValue(app.getSettings().getApplicationMode())) {
-			LOG.warn("SPEEDALERT: Monitoring stopped");
+			SpeedAlertLogger.log(app, "Monitoring stopped");
 		}
 	}
 
@@ -161,6 +175,9 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 	public void activate() {
 		if (!active) {
 			active = true;
+			lastLimitKmh = -1;
+			lastAlertTime = 0;
+			wasAlerting = false;
 			loadSound();
 		}
 	}
@@ -171,6 +188,8 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 			releaseSound();
 			lastAlertTime = 0;
 			lastLimitKmh = -1;
+			lastProcessedLocation = null;
+			wasAlerting = false;
 		}
 	}
 
@@ -181,7 +200,9 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 	}
 
 	public void manualTestAlert() {
-		LOG.warn("SPEEDALERT: Manual test alert triggered");
+		if (app.getSettings().SPEED_ALERT_VERBOSE_LOG.getModeValue(app.getSettings().getApplicationMode())) {
+			SpeedAlertLogger.log(app, "Manual test alert triggered");
+		}
 		loadSound(); // Ensure sound is loaded
 		playAlert("--", "--");
 	}
@@ -220,6 +241,7 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 				afd.close();
 			}
 		} catch (IOException e) {
+			SpeedAlertLogger.log(app, "Failed to load speed alert sound: " + e.getMessage());
 			LOG.error("SPEEDALERT: Failed to load speed alert sound", e);
 		}
 	}
@@ -246,10 +268,19 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 		}
 
 		ApplicationMode appMode = app.getSettings().getApplicationMode();
-		double currentSpeedKmh = location.getSpeed() * 3.6;
+		currentSpeedKmh = location.getSpeed() * 3.6;
+
+		// Ignore updates if walking or stationary (< 5 km/h) to avoid jitter/fallback flip-flopping.
+		// We always allow the first update (lastLimitKmh == -1) to initialize state.
+		if (currentSpeedKmh < 5.0 && lastLimitKmh != -1) {
+			if (lastProcessedLocation != null && location.distanceTo(lastProcessedLocation) < 5.0) {
+				return;
+			}
+		}
+		// Store a copy of the location if we decide to process the update
+		lastProcessedLocation = new Location(location);
+
 		RouteDataObject routeObject = app.getLocationProvider().getLastKnownRouteSegment(location);
-		double limitKmh;
-		String limitSource;
 
 		if (routeObject != null) {
 			boolean direction = routeObject.bearingVsRouteDirection(location);
@@ -266,30 +297,38 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 			limitSource = "fallback";
 		}
 
-		if (lastLimitKmh != -1 && lastLimitKmh != limitKmh) {
+		boolean limitChanged = (lastLimitKmh == -1 && limitKmh > 0) || Math.abs(lastLimitKmh - limitKmh) > 0.1;
+		if (limitChanged) {
 			if (app.getSettings().SPEED_ALERT_LIMIT_CHANGE_TOAST_ENABLED.getModeValue(appMode)) {
 				String limitFormatted = OsmAndFormatter.getFormattedSpeed((float) (limitKmh / 3.6), app);
 				app.showToastMessage(app.getString(R.string.speed_alert_limit_change, limitFormatted));
 			}
+			if (app.getSettings().SPEED_ALERT_VERBOSE_LOG.getModeValue(appMode)) {
+				SpeedAlertLogger.log(app, "[*] LIMIT: " + String.format("%.1f", limitKmh) + " km/h (" + limitSource + ")");
+			}
+			app.getNotificationHelper().refreshNotification(OsmandNotification.NotificationType.SPEED_ALERT);
 		}
 		lastLimitKmh = limitKmh;
 
 		double thresholdKmh = app.getSettings().SPEED_ALERT_THRESHOLD_KMH.getModeValue(appMode);
 		long now = System.currentTimeMillis();
 		long intervalMs = app.getSettings().SPEED_ALERT_INTERVAL_S.getModeValue(appMode) * 1000L;
-		long timeSinceLastAlert = lastAlertTime > 0 ? now - lastAlertTime : 0;
 		boolean alertFired = currentSpeedKmh > limitKmh + thresholdKmh && now - lastAlertTime >= intervalMs;
 
 		if (app.getSettings().SPEED_ALERT_VERBOSE_LOG.getModeValue(appMode)) {
-			long logPeriodMs = app.getSettings().SPEED_ALERT_VERBOSE_LOG_PERIOD.getModeValue(appMode) * 1000L;
-			if (alertFired || now - lastLogTime >= logPeriodMs) {
-				LOG.warn("SPEEDALERT: speed=" + String.format("%.1f", currentSpeedKmh)
-						+ " limit=" + String.format("%.1f", limitKmh)
-						+ " (" + limitSource + ")"
-						+ " threshold=" + String.format("%.1f", thresholdKmh)
-						+ " alertFired=" + alertFired
-						+ " timeSinceLast=" + timeSinceLastAlert + " ms");
-				lastLogTime = now;
+			if (alertFired && !wasAlerting) {
+				SpeedAlertLogger.log(app, "[!] ALERT START: " + String.format("%.1f", currentSpeedKmh) + " km/h (Limit: " + String.format("%.1f", limitKmh) + ")");
+				wasAlerting = true;
+			} else if (wasAlerting && currentSpeedKmh <= limitKmh) {
+				SpeedAlertLogger.log(app, "[✓] ALERT STOP: Speed dropped to " + String.format("%.1f", currentSpeedKmh) + " km/h");
+				wasAlerting = false;
+			} else {
+				long logPeriodMs = app.getSettings().SPEED_ALERT_VERBOSE_LOG_PERIOD.getModeValue(appMode) * 1000L;
+				if (limitChanged || now - lastLogTime >= logPeriodMs) {
+					String msg = "[.] " + String.format("%.1f", currentSpeedKmh) + "/" + String.format("%.1f", limitKmh) + " km/h (" + limitSource + ")";
+					SpeedAlertLogger.log(app, msg);
+					lastLogTime = now;
+				}
 			}
 		}
 
@@ -298,8 +337,12 @@ public class SpeedAlertPlugin extends OsmandPlugin {
 			String limitFormatted = OsmAndFormatter.getFormattedSpeed((float) (limitKmh / 3.6), app);
 			playAlert(currentSpeedFormatted, limitFormatted);
 			lastAlertTime = now;
+			app.getNotificationHelper().refreshNotification(OsmandNotification.NotificationType.SPEED_ALERT);
 		} else if (currentSpeedKmh <= limitKmh) {
-			lastAlertTime = 0;
+			if (lastAlertTime != 0) {
+				lastAlertTime = 0;
+				app.getNotificationHelper().refreshNotification(OsmandNotification.NotificationType.SPEED_ALERT);
+			}
 		}
 	}
 

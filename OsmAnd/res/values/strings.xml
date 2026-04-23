@@ -4884,9 +4884,15 @@ Download tile maps directly, or copy them as SQLite database files to OsmAnd\'s 
     <string name="speed_alert_fallback">Fallback speed limit</string>
     <string name="speed_alert_interval">Repeat alert interval</string>
     <string name="speed_alert_verbose_log">Speed alert verbose log</string>
-    <string name="speed_alert_verbose_log_descr">Log detailed speed calculations and alert triggers to logcat</string>
+    <string name="speed_alert_verbose_log_descr">Log detailed speed calculations and alert triggers to a persistent file</string>
     <string name="speed_alert_verbose_log_period">Verbose logging period</string>
     <string name="speed_alert_verbose_log_period_descr">Frequency of verbose logging in seconds</string>
+    <string name="speed_alert_view_log">View persistent log</string>
+    <string name="speed_alert_clear_log">Clear persistent log</string>
+    <string name="speed_alert_clear_log_confirm">Are you sure you want to clear the persistent log?</string>
+    <string name="speed_alert_log_cleared">Persistent log cleared</string>
+    <string name="speed_alert_start_monitoring">Start monitoring</string>
+    <string name="speed_alert_stop_monitoring">Stop monitoring</string>
     <string name="speed_alert_sound_mode">Sound alert</string>
     <string name="speed_alert_sound_adaptive">Adaptive</string>
     <string name="speed_alert_sound_speaker">Speaker</string>
